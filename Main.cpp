@@ -1,197 +1,106 @@
-#include <cmath>
-#include <ctime>
-#include <fstream>
-#include <string>
-#include <sstream>
-#include <thread>
-#include <vector>
 #include "ConsoleHandler.hpp"
+#include <fstream>
+#include <iostream>
+#include <windows.h>
+#include <vector>
+#include <thread>
+#include <map>
+#include <sstream>
 
-struct TPOINT {
-	int x = 0;
-	int y = 0;
+#define DIRECTION_NULL 0
+#define DIRECTION_UP 1
+#define DIRECTION_DOWN 2
+#define DIRECTION_LEFT 3
+#define DIRECTION_RIGHT 4
+
+struct Point {
+	unsigned int x = 0;
+	unsigned int y = 0;
 };
 
-ConsoleHandler handler;
+struct Entity {
+	Point position;
+	unsigned short direction = DIRECTION_NULL;
+};
 
 void handlerKey(int key);
-void handlerLogic();
-bool playerCheckCollision(int x, int y);
-void playerMove(int x, int y);
-void lose();
 void drawMap();
 void drawScore();
-void spawnFood();
-void eaten(int x, int y);
+void handlerLogic();
+void playerTick();
+bool checkCollision(Point position, int relativeX, int relativeY);
+void playerMove(int relativeX, int relativeY);
 
-TPOINT getPoint(int x, int y);
+Point relativeMap;
+unsigned int score = 0;
+unsigned int tickDuration = 200;
 
-std::vector<TPOINT> playerPosition;
-std::vector<std::string> map;
+Entity player;
+ConsoleHandler handler;
 
-#define UP 0
-#define DOWN 1
-#define LEFT 2
-#define RIGHT 3
-int playerDirection = RIGHT;
-
-int tickTime = 200;
-int score = 0;
-int maxScore = 0;
+std::vector<std::wstring> map;
+std::map<wchar_t, Style::Theme> textures;
 
 int main() {
-	srand(time(NULL));
-
-	std::fstream fin("map");
+	std::wfstream fin(L"map");
 
 	while (!fin.eof()) {
-		map.push_back("");
+		map.push_back(L"");
 		getline(fin, map.back());
 	}
 
-	handler.init(map.size() + 1, map[0].size());
-	handler.setTitle(L"Snake");
+	relativeMap.y = 1;
 
-	drawMap();
-	drawScore();
-	spawnFood();
+	handler.init(map.size() + relativeMap.y, map[0].size());
+	handler.setTitle(L"Pacman");
 
 	handler.registerHandlerCallback(handlerKey);
+
 	handler.registerKeyCallback(ConsoleHandler::KEY_CODE_W);
 	handler.registerKeyCallback(ConsoleHandler::KEY_CODE_A);
 	handler.registerKeyCallback(ConsoleHandler::KEY_CODE_S);
 	handler.registerKeyCallback(ConsoleHandler::KEY_CODE_D);
 
-	playerPosition.push_back(getPoint(1, 1));
+	textures.insert(std::pair<wchar_t, Style::Theme> ('=', Style::create(Color::LIGHTBLUE, Color::BLACK)));
+	textures.insert(std::pair<wchar_t, Style::Theme> ('.', Style::create(Color::BROWN, Color::BLACK)));
 
-	std::thread threadLogic(handlerLogic);
-	threadLogic.detach();
+	drawMap();
+	drawScore();
+
+	player.position.x = 1;
+	player.position.y = 1;
+
+	std::thread threadHandlerLogic(handlerLogic);
+	threadHandlerLogic.detach();
 
 	handler.mainLoop();
 }
 
 void handlerKey(int key) {
 	switch (key) {
-	case ConsoleHandler::KEY_CODE_W:
-		playerDirection = UP;
-		break;
-	case ConsoleHandler::KEY_CODE_S:
-		playerDirection = DOWN;
-		break;
-	case ConsoleHandler::KEY_CODE_A:
-		playerDirection = LEFT;
-		break;
-	case ConsoleHandler::KEY_CODE_D:
-		playerDirection = RIGHT;
-		break;
-	}
-}
-
-void handlerLogic() {
-	while (true) {
-		int relativeX = 0;
-		int relativeY = 0;
-
-		switch (playerDirection) {
-		case UP:
-			relativeY = -1;
-			break;
-		case DOWN:
-			relativeY = 1;
-			break;
-		case LEFT:
-			relativeX = -1;
-			break;
-		case RIGHT:
-			relativeX = 1;
+		case ConsoleHandler::KEY_CODE_W: {
+			player.direction = DIRECTION_UP;
 			break;
 		}
-
-		if (!playerCheckCollision(relativeX, relativeY)) {
-			playerMove(relativeX, relativeY);
+		case ConsoleHandler::KEY_CODE_A: {
+			player.direction = DIRECTION_LEFT;
+			break;
 		}
-		else {
-			relativeX = 0;
-			relativeY = 0;
+		case ConsoleHandler::KEY_CODE_S: {
+			player.direction = DIRECTION_DOWN;
+			break;
 		}
-
-		eaten(relativeX, relativeY);
-
-		Sleep(tickTime);
-	}
-}
-
-bool playerCheckCollision(int x, int y) {
-	for (int i = 0; i < playerPosition.size(); i++) {
-		char symbol = map[y + playerPosition[i].y][x + playerPosition[i].x];
-
-		if (symbol == '=') {
-			return true;
+		case ConsoleHandler::KEY_CODE_D: {
+			player.direction = DIRECTION_RIGHT;
+			break;
 		}
 	}
-	return false;
-}
-
-void playerMove(int x, int y) {
-	playerPosition.insert(
-		playerPosition.begin(),
-		getPoint(playerPosition[0].x + x, playerPosition[0].y + y));
-	char symbol;
-	switch (playerDirection) {
-	case UP:
-		symbol = 'A';
-		break;
-	case DOWN:
-		symbol = 'V';
-		break;
-	case LEFT:
-		symbol = '<';
-		break;
-	case RIGHT:
-		symbol = '>';
-		break;
-	}
-
-	handler.changePixel(playerPosition.front().x, playerPosition.front().y, symbol, Style::create(Color::YELLOW, Color::BLACK));
-
-
-		handler.changePixel(playerPosition.back().x, playerPosition.back().y, ' ', Style::create(Color::BLACK, Color::BLACK));
-		playerPosition.pop_back();
-
-}
-
-void lose() {
-	if (maxScore < score) {
-		maxScore = score;
-	}
-
-	playerPosition.clear();
-	playerPosition.push_back(getPoint(1, 1));
-	playerDirection = RIGHT;
-
-	score = 0;
-
-	drawMap();
-	drawScore();
-}
-
-TPOINT getPoint(int x, int y) {
-	TPOINT result;
-
-	result.x = x;
-	result.y = y;
-
-	return result;
 }
 
 void drawMap() {
-	for (int y = 0; y < map.size(); y++) {
-		for (int x = 0; x < map[y].size(); x++) {
-			if (map[y][x] == '=') {
-				handler.changePixel(x, y, '=', Style::create(Color::BLUE, Color::BLACK));
-			} else {
-				handler.changePixel(x, y, map[y][x], Style::create(Color::WHITE, Color::WHITE));
-			}
+	for (unsigned int y = 0; y < map.size(); ++y) {
+		for (unsigned int x = 0; x < map[y].size(); ++x) {
+			handler.changePixel(x, y + relativeMap.y, map[y][x], textures[map[y][x]]);
 		}
 	}
 }
@@ -199,24 +108,81 @@ void drawMap() {
 void drawScore() {
 	std::wstringstream scoreStream;
 	scoreStream << "Score: " << score;
-	handler.writeText(0, 24, scoreStream.str(), 32, Style::create(Color::WHITE, Color::BLACK));
+
+	handler.writeText(0, 0, scoreStream.str(), map[0].size(), Style::create(Color::WHITE, Color::BLACK));
 }
 
-void spawnFood() {
-    for (int y = 0; y < map.size(); y++) {
-		for (int x = 0; x < map[y].size(); x++) {
-            if (map[y][x] != '=') {
-                handler.changePixel(x, y, '.', Style::create(Color::YELLOW, Color::BLACK));
-            }
+void handlerLogic() {
+	while(true) {
+		playerTick();
+
+		Sleep(tickDuration);
+	}
+}
+
+void playerTick() {
+	int relativeX = 0;
+	int relativeY = 0;
+
+	switch (player.direction) {
+		case DIRECTION_UP: {
+			relativeY = -1;
+			break;
 		}
-    }
+		case DIRECTION_LEFT: {
+			relativeX = -1;
+			break;
+		}
+		case DIRECTION_DOWN : {
+			relativeY = 1;
+			break;
+		}
+		case DIRECTION_RIGHT : {
+			relativeX = 1;
+			break;
+		}
+	}
+
+	if (!checkCollision(player.position, relativeX, relativeY)) {
+		playerMove(relativeX, relativeY);
+	}
 }
 
-void eaten(int x, int y) {
-    for (int i = 0; i < playerPosition.size(); i++) {
-        char symbol = map[y + playerPosition[i].y][x + playerPosition[i].x];
-        if (symbol = '.') {
-            score++;
-        }
-    }
+bool checkCollision(Point position, int relativeX, int relativeY) {
+	return map[position.y + relativeY][position.x + relativeX] == '=';
+}
+
+void playerMove(int relativeX, int relativeY) {
+	handler.changePixel(player.position.x, player.position.y + relativeMap.y, ' ');
+
+	player.position.x += relativeX;
+	player.position.y += relativeY;
+
+	wchar_t symbol = 'O';
+	switch (player.direction) {
+		case DIRECTION_UP: {
+			symbol = 'A';
+			break;
+		}
+		case DIRECTION_LEFT: {
+			symbol = '<';
+			break;
+		}
+		case DIRECTION_DOWN : {
+			symbol = 'V';
+			break;
+		}
+		case DIRECTION_RIGHT : {
+			symbol = '>';
+			break;
+		}
+	}
+
+	handler.changePixel(player.position.x, player.position.y + relativeMap.y, symbol, Style::create(Color::YELLOW, Color::BLACK));
+
+	if (map[player.position.y][player.position.x] == '.') {
+		score++;
+		drawScore();
+		map[player.position.y][player.position.x] = ' ';
+	}
 }
