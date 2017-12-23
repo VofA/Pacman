@@ -1,17 +1,18 @@
-#include "ConsoleHandler.hpp"
+#include <map>
+#include <cmath>
+#include <thread>
+#include <vector>
 #include <fstream>
+#include <sstream>
 #include <iostream>
 #include <windows.h>
-#include <vector>
-#include <thread>
-#include <map>
-#include <sstream>
+#include "ConsoleHandler.hpp"
 
-#define DIRECTION_NULL 0
-#define DIRECTION_UP 1
-#define DIRECTION_DOWN 2
-#define DIRECTION_LEFT 3
-#define DIRECTION_RIGHT 4
+#define DIRECTION_UP 0
+#define DIRECTION_DOWN 1
+#define DIRECTION_LEFT 2
+#define DIRECTION_RIGHT 3
+#define DIRECTION_NULL 4
 
 struct Point {
 	unsigned int x = 0;
@@ -28,14 +29,18 @@ void drawMap();
 void drawScore();
 void handlerLogic();
 void playerTick();
+void botTick();
 bool checkCollision(Point position, int relativeX, int relativeY);
 void playerMove(int relativeX, int relativeY);
+int getLengthVector(Point first, Point second);
+Point getPoint(int x, int y);
 
 Point relativeMap;
 unsigned int score = 0;
 unsigned int tickDuration = 200;
 
 Entity player;
+Entity bot;
 ConsoleHandler handler;
 
 std::vector<std::wstring> map;
@@ -69,6 +74,9 @@ int main() {
 
 	player.position.x = 1;
 	player.position.y = 1;
+
+	bot.position.x = 20;
+	bot.position.y = 5;
 
 	std::thread threadHandlerLogic(handlerLogic);
 	threadHandlerLogic.detach();
@@ -115,6 +123,7 @@ void drawScore() {
 void handlerLogic() {
 	while(true) {
 		playerTick();
+		botTick();
 
 		Sleep(tickDuration);
 	}
@@ -133,7 +142,7 @@ void playerTick() {
 			relativeX = -1;
 			break;
 		}
-		case DIRECTION_DOWN : {
+		case DIRECTION_DOWN: {
 			relativeY = 1;
 			break;
 		}
@@ -146,6 +155,67 @@ void playerTick() {
 	if (!checkCollision(player.position, relativeX, relativeY)) {
 		playerMove(relativeX, relativeY);
 	}
+}
+
+void botTick() {
+	handler.changePixel(bot.position.x, bot.position.y + relativeMap.y, map[bot.position.y][bot.position.x], textures['.']);
+
+	struct botDirection {
+		unsigned int length = 0;
+		int relativeX = 0;
+		int relativeY = 0;
+	};
+
+	std::vector<botDirection> lengthVector(4);
+
+	lengthVector[DIRECTION_UP].length = getLengthVector(player.position, getPoint(bot.position.x, bot.position.y - 1));
+	lengthVector[DIRECTION_UP].relativeY = -1;
+
+	lengthVector[DIRECTION_LEFT].length = getLengthVector(player.position, getPoint(bot.position.x - 1, bot.position.y));
+	lengthVector[DIRECTION_LEFT].relativeX = -1;
+
+	lengthVector[DIRECTION_DOWN].length = getLengthVector(player.position, getPoint(bot.position.x, bot.position.y + 1));
+	lengthVector[DIRECTION_DOWN].relativeY = 1;
+
+	lengthVector[DIRECTION_RIGHT].length = getLengthVector(player.position, getPoint(bot.position.x + 1, bot.position.y));
+	lengthVector[DIRECTION_RIGHT].relativeX = 1;
+
+	unsigned int maxLengthVector = getLengthVector(getPoint(0, 0), getPoint(map[0].size(), map.size()));
+
+	switch (bot.direction) {
+		case DIRECTION_UP: {
+			lengthVector[DIRECTION_DOWN].length = maxLengthVector;
+			break;
+		}
+		case DIRECTION_LEFT: {
+			lengthVector[DIRECTION_RIGHT].length = maxLengthVector;
+			break;
+		}
+		case DIRECTION_DOWN: {
+			lengthVector[DIRECTION_UP].length = maxLengthVector;
+			break;
+		}
+		case DIRECTION_RIGHT: {
+			lengthVector[DIRECTION_LEFT].length = maxLengthVector;
+			break;
+		}
+	}
+
+	unsigned int minLengthVector = maxLengthVector;
+	unsigned int minLengthDirection = 0;
+
+	for (unsigned int i = 0; i < 4; ++i) {
+		if (lengthVector[i].length <= minLengthVector && !checkCollision(bot.position, lengthVector[i].relativeX, lengthVector[i].relativeY)) {
+			minLengthDirection = i;
+			minLengthVector = lengthVector[i].length;
+		}
+	}
+
+	bot.direction = minLengthDirection;
+	bot.position.x += lengthVector[minLengthDirection].relativeX;
+	bot.position.y += lengthVector[minLengthDirection].relativeY;
+
+	handler.changePixel(bot.position.x, bot.position.y + relativeMap.y, '@', Style::create(Color::RED, Color::BLACK));
 }
 
 bool checkCollision(Point position, int relativeX, int relativeY) {
@@ -185,4 +255,17 @@ void playerMove(int relativeX, int relativeY) {
 		drawScore();
 		map[player.position.y][player.position.x] = ' ';
 	}
+}
+
+int getLengthVector(Point first, Point second) {
+	return (first.x - second.x) * (first.x - second.x) + (first.y - second.y) * (first.y - second.y);
+}
+
+Point getPoint(int x, int y) {
+	Point point;
+
+	point.x = x;
+	point.y = y;
+
+	return point;
 }
