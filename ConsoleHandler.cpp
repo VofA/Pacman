@@ -1,20 +1,22 @@
 #include "ConsoleHandler.hpp"
 
-#include <iostream>
-#include <windows.h>
-
-void ConsoleHandler::init(int height, int width) {
+void ConsoleHandler::init(unsigned int height, unsigned int width) {
 	_COORD consoleSizes = { short(width), short(height) };
 	_SMALL_RECT window = { 0, 0, short(consoleSizes.X - 1), short(consoleSizes.Y - 1) };
 
 	SetConsoleScreenBufferSize(GetStdHandle(STD_OUTPUT_HANDLE), consoleSizes);
 	SetConsoleWindowInfo(GetStdHandle(STD_OUTPUT_HANDLE), true, &window);
 	
-	graphics.init(height, width);
+	_setmode(_fileno(stdout), _O_WTEXT);
+	_setmode(_fileno(stdin), _O_WTEXT);
+	_setmode(_fileno(stderr), _O_WTEXT);
+
+	Graphics::init(height, width);
 }
 
-void ConsoleHandler::setTitle(const std::string &title) {
-	SetConsoleTitleA((LPCSTR)title.c_str());
+void ConsoleHandler::setTitle(const std::wstring &title) {
+	const std::string shortTitle(title.begin(), title.end());
+	SetConsoleTitle(shortTitle.c_str());
 }
 
 void ConsoleHandler::registerHandlerCallback(void(*function)(int)) {
@@ -33,7 +35,7 @@ void ConsoleHandler::mainLoop() {
 			}
 		}
 
-		graphics.draw();
+		Graphics::draw();
 
 		Sleep(1);
 	}

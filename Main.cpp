@@ -50,7 +50,7 @@ int main() {
 	}
 
 	handler.init(map.size() + 1, map[0].size());
-	handler.setTitle("Snake");
+	handler.setTitle(L"Snake");
 
 	drawMap();
 	drawScore();
@@ -73,16 +73,16 @@ int main() {
 void handlerKey(int key) {
 	switch (key) {
 	case ConsoleHandler::KEY_CODE_W:
-	    playerDirection = UP;
+		playerDirection = UP;
 		break;
 	case ConsoleHandler::KEY_CODE_S:
-        playerDirection = DOWN;
+		playerDirection = DOWN;
 		break;
 	case ConsoleHandler::KEY_CODE_A:
-        playerDirection = LEFT;
+		playerDirection = LEFT;
 		break;
 	case ConsoleHandler::KEY_CODE_D:
-        playerDirection = RIGHT;
+		playerDirection = RIGHT;
 		break;
 	}
 }
@@ -152,10 +152,10 @@ void playerMove(int x, int y) {
 		break;
 	}
 
-	handler.graphics.changePixel(playerPosition.front().x, playerPosition.front().y, symbol, Style::create(Color::YELLOW, Color::BLACK));
+	handler.changePixel(playerPosition.front().x, playerPosition.front().y, symbol, Style::create(Color::YELLOW, Color::BLACK));
 
 
-		handler.graphics.changePixel(playerPosition.back().x, playerPosition.back().y, ' ', Style::create(Color::BLACK, Color::BLACK));
+		handler.changePixel(playerPosition.back().x, playerPosition.back().y, ' ', Style::create(Color::BLACK, Color::BLACK));
 		playerPosition.pop_back();
 
 }
@@ -188,25 +188,25 @@ void drawMap() {
 	for (int y = 0; y < map.size(); y++) {
 		for (int x = 0; x < map[y].size(); x++) {
 			if (map[y][x] == '=') {
-				handler.graphics.changePixel(x, y, '=', Style::create(Color::BLUE, Color::BLACK));
+				handler.changePixel(x, y, '=', Style::create(Color::BLUE, Color::BLACK));
 			} else {
-				handler.graphics.changePixel(x, y, map[y][x], Style::create(Color::WHITE, Color::WHITE));
+				handler.changePixel(x, y, map[y][x], Style::create(Color::WHITE, Color::WHITE));
 			}
 		}
 	}
 }
 
 void drawScore() {
-	std::ostringstream scoreStream;
+	std::wstringstream scoreStream;
 	scoreStream << "Score: " << score;
-	handler.graphics.writeText(0, 24, scoreStream.str(), 32, Style::create(Color::WHITE, Color::BLACK));
+	handler.writeText(0, 24, scoreStream.str(), 32, Style::create(Color::WHITE, Color::BLACK));
 }
 
 void spawnFood() {
     for (int y = 0; y < map.size(); y++) {
 		for (int x = 0; x < map[y].size(); x++) {
             if (map[y][x] != '=') {
-                handler.graphics.changePixel(x, y, '.', Style::create(Color::YELLOW, Color::BLACK));
+                handler.changePixel(x, y, '.', Style::create(Color::YELLOW, Color::BLACK));
             }
 		}
     }
