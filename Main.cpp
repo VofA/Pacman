@@ -26,6 +26,7 @@ struct Entity {
 
 void handlerKey(int key);
 void drawMap();
+void drawLives();
 void drawScore();
 void handlerLogic();
 void playerTick();
@@ -33,14 +34,16 @@ void botTick();
 bool checkCollision(Point position, int relativeX, int relativeY);
 void playerMove(int relativeX, int relativeY);
 int getLengthVector(Point first, Point second);
+void checkLose();
 Point getPoint(int x, int y);
 
-Point relativeMap;
+unsigned int lives = 3;
 unsigned int score = 0;
 unsigned int tickDuration = 200;
 
-Entity player;
 Entity bot;
+Entity player;
+Point relativeMap;
 ConsoleHandler handler;
 
 std::vector<std::wstring> map;
@@ -56,7 +59,7 @@ int main() {
 
 	relativeMap.y = 1;
 
-	handler.init(map.size() + relativeMap.y, map[0].size());
+	handler.init(map.size() + 2, map[0].size());
 	handler.setTitle(L"Pacman");
 
 	handler.registerHandlerCallback(handlerKey);
@@ -71,6 +74,7 @@ int main() {
 
 	drawMap();
 	drawScore();
+	drawLives();
 
 	player.position.x = 1;
 	player.position.y = 1;
@@ -115,7 +119,7 @@ void drawMap() {
 
 void drawScore() {
 	std::wstringstream scoreStream;
-	scoreStream << "Score: " << score;
+	scoreStream << L"Score: " << score;
 
 	handler.writeText(0, 0, scoreStream.str(), map[0].size(), Style::create(Color::WHITE, Color::BLACK));
 }
@@ -154,6 +158,7 @@ void playerTick() {
 
 	if (!checkCollision(player.position, relativeX, relativeY)) {
 		playerMove(relativeX, relativeY);
+		checkLose();
 	}
 }
 
@@ -215,6 +220,8 @@ void botTick() {
 	bot.position.x += lengthVector[minLengthDirection].relativeX;
 	bot.position.y += lengthVector[minLengthDirection].relativeY;
 
+	checkLose();
+
 	handler.changePixel(bot.position.x, bot.position.y + relativeMap.y, '@', Style::create(Color::RED, Color::BLACK));
 }
 
@@ -268,4 +275,22 @@ Point getPoint(int x, int y) {
 	point.y = y;
 
 	return point;
+}
+
+void checkLose() {
+	if (player.position.x == bot.position.x && player.position.y == bot.position.y) {
+		lives--;
+		drawLives();
+	}
+
+	if (lives == 0) {
+
+	}
+}
+
+void drawLives() {
+	std::wstringstream scoreStream;
+	scoreStream << L"Lives: " << lives;
+
+	handler.writeText(0, map.size() + relativeMap.y, scoreStream.str(), map[0].size(), Style::create(Color::WHITE, Color::BLACK));
 }
