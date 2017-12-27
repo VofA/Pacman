@@ -8,6 +8,9 @@
 #include <windows.h>
 #include "ConsoleHandler.hpp"
 
+#define BOT_RED 0
+#define BOT_PINK 1
+
 #define DIRECTION_UP 0
 #define DIRECTION_DOWN 1
 #define DIRECTION_LEFT 2
@@ -30,7 +33,9 @@ void drawLives();
 void drawScore();
 void handlerLogic();
 void playerTick();
-void botTick();
+void getPathBot();
+void redBot();
+void pinkBot();
 bool checkCollision(Point position, int relativeX, int relativeY);
 void playerMove(int relativeX, int relativeY);
 int getLengthVector(Point first, Point second);
@@ -41,7 +46,7 @@ unsigned int lives = 3;
 unsigned int score = 0;
 unsigned int tickDuration = 200;
 
-Entity bot;
+Entity bots[4];
 Entity player;
 Point relativeMap;
 ConsoleHandler handler;
@@ -79,8 +84,10 @@ int main() {
 	player.position.x = 1;
 	player.position.y = 1;
 
-	bot.position.x = 20;
-	bot.position.y = 5;
+	for (int i = 0; i < 4; ++i) {
+		bots[i].position.x = 20;
+		bots[i].position.y = 5;
+	}
 
 	std::thread threadHandlerLogic(handlerLogic);
 	threadHandlerLogic.detach();
@@ -127,7 +134,8 @@ void drawScore() {
 void handlerLogic() {
 	while(true) {
 		playerTick();
-		botTick();
+		redBot();
+		pinkBot();
 
 		Sleep(tickDuration);
 	}
@@ -162,46 +170,44 @@ void playerTick() {
 	}
 }
 
-void botTick() {
-	handler.changePixel(bot.position.x, bot.position.y + relativeMap.y, map[bot.position.y][bot.position.x], textures['.']);
-
+int getPathBot(Entity first, Entity second) {
 	struct botDirection {
 		unsigned int length = 0;
 		int relativeX = 0;
 		int relativeY = 0;
 	};
 
-	std::vector<botDirection> lengthVector(4);
+	botDirection lengthVectors[4];
 
-	lengthVector[DIRECTION_UP].length = getLengthVector(player.position, getPoint(bot.position.x, bot.position.y - 1));
-	lengthVector[DIRECTION_UP].relativeY = -1;
+	lengthVectors[DIRECTION_UP].length = getLengthVector(first.position, getPoint(second.position.x, second.position.y - 1));
+	lengthVectors[DIRECTION_UP].relativeY = -1;
 
-	lengthVector[DIRECTION_LEFT].length = getLengthVector(player.position, getPoint(bot.position.x - 1, bot.position.y));
-	lengthVector[DIRECTION_LEFT].relativeX = -1;
+	lengthVectors[DIRECTION_LEFT].length = getLengthVector(first.position, getPoint(second.position.x - 1, second.position.y));
+	lengthVectors[DIRECTION_LEFT].relativeX = -1;
 
-	lengthVector[DIRECTION_DOWN].length = getLengthVector(player.position, getPoint(bot.position.x, bot.position.y + 1));
-	lengthVector[DIRECTION_DOWN].relativeY = 1;
+	lengthVectors[DIRECTION_DOWN].length = getLengthVector(first.position, getPoint(second.position.x, second.position.y + 1));
+	lengthVectors[DIRECTION_DOWN].relativeY = 1;
 
-	lengthVector[DIRECTION_RIGHT].length = getLengthVector(player.position, getPoint(bot.position.x + 1, bot.position.y));
-	lengthVector[DIRECTION_RIGHT].relativeX = 1;
+	lengthVectors[DIRECTION_RIGHT].length = getLengthVector(first.position, getPoint(second.position.x + 1, second.position.y));
+	lengthVectors[DIRECTION_RIGHT].relativeX = 1;
 
 	unsigned int maxLengthVector = getLengthVector(getPoint(0, 0), getPoint(map[0].size(), map.size()));
 
-	switch (bot.direction) {
+	switch (second.direction) {
 		case DIRECTION_UP: {
-			lengthVector[DIRECTION_DOWN].length = maxLengthVector;
+			lengthVectors[DIRECTION_DOWN].length = maxLengthVector;
 			break;
 		}
 		case DIRECTION_LEFT: {
-			lengthVector[DIRECTION_RIGHT].length = maxLengthVector;
+			lengthVectors[DIRECTION_RIGHT].length = maxLengthVector;
 			break;
 		}
 		case DIRECTION_DOWN: {
-			lengthVector[DIRECTION_UP].length = maxLengthVector;
+			lengthVectors[DIRECTION_UP].length = maxLengthVector;
 			break;
 		}
 		case DIRECTION_RIGHT: {
-			lengthVector[DIRECTION_LEFT].length = maxLengthVector;
+			lengthVectors[DIRECTION_LEFT].length = maxLengthVector;
 			break;
 		}
 	}
@@ -210,19 +216,108 @@ void botTick() {
 	unsigned int minLengthDirection = 0;
 
 	for (unsigned int i = 0; i < 4; ++i) {
-		if (lengthVector[i].length <= minLengthVector && !checkCollision(bot.position, lengthVector[i].relativeX, lengthVector[i].relativeY)) {
+		if (lengthVectors[i].length <= minLengthVector && !checkCollision(second.position, lengthVectors[i].relativeX, lengthVectors[i].relativeY)) {
 			minLengthDirection = i;
-			minLengthVector = lengthVector[i].length;
+			minLengthVector = lengthVectors[i].length;
 		}
 	}
 
-	bot.direction = minLengthDirection;
-	bot.position.x += lengthVector[minLengthDirection].relativeX;
-	bot.position.y += lengthVector[minLengthDirection].relativeY;
+	return minLengthDirection;
+}
+
+void redBot() {
+	handler.changePixel(bots[BOT_RED].position.x, bots[BOT_RED].position.y + relativeMap.y, map[bots[BOT_RED].position.y][bots[BOT_RED].position.x], textures[map[bots[BOT_RED].position.y][bots[BOT_RED].position.x]]);
+
+	int direction = getPathBot(player, bots[BOT_RED]);
+
+	int relativeX = 0;
+	int relativeY = 0;
+
+	switch (direction) {
+		case DIRECTION_UP: {
+			relativeY = -1;
+			break;
+		}
+		case DIRECTION_LEFT: {
+			relativeX = -1;
+			break;
+		}
+		case DIRECTION_DOWN: {
+			relativeY = 1;
+			break;
+		}
+		case DIRECTION_RIGHT : {
+			relativeX = 1;
+			break;
+		}
+	}
+
+	bots[BOT_RED].direction = direction;
+
+	bots[BOT_RED].position.x += relativeX;
+	bots[BOT_RED].position.y += relativeY;
 
 	checkLose();
 
-	handler.changePixel(bot.position.x, bot.position.y + relativeMap.y, '@', Style::create(Color::RED, Color::BLACK));
+	handler.changePixel(bots[BOT_RED].position.x, bots[BOT_RED].position.y + relativeMap.y, '@', Style::create(Color::RED, Color::BLACK));
+}
+
+void pinkBot() {
+	handler.changePixel(bots[BOT_PINK].position.x, bots[BOT_PINK].position.y + relativeMap.y, map[bots[BOT_PINK].position.y][bots[BOT_PINK].position.x], textures[map[bots[BOT_PINK].position.y][bots[BOT_PINK].position.x]]);
+
+	Entity copyPlayer = player;
+
+	switch (player.direction) {
+		case DIRECTION_UP: {
+			copyPlayer.position.y -= 4;
+			break;
+		}
+		case DIRECTION_DOWN: {
+			copyPlayer.position.x += 4;
+			break;
+		}
+		case DIRECTION_LEFT: {
+			copyPlayer.position.y -= 4;
+			break;
+		}
+		case DIRECTION_RIGHT: {
+			copyPlayer.position.x += -4;
+			break;
+		}
+	}
+
+	int direction = getPathBot(copyPlayer, bots[BOT_PINK]);
+
+	int relativeX = 0;
+	int relativeY = 0;
+
+	switch (direction) {
+		case DIRECTION_UP: {
+			relativeY = -1;
+			break;
+		}
+		case DIRECTION_LEFT: {
+			relativeX = -1;
+			break;
+		}
+		case DIRECTION_DOWN: {
+			relativeY = 1;
+			break;
+		}
+		case DIRECTION_RIGHT : {
+			relativeX = 1;
+			break;
+		}
+	}
+
+	bots[BOT_PINK].direction = direction;
+
+	bots[BOT_PINK].position.x += relativeX;
+	bots[BOT_PINK].position.y += relativeY;
+
+	checkLose();
+
+	handler.changePixel(bots[BOT_PINK].position.x, bots[BOT_PINK].position.y + relativeMap.y, '@', Style::create(Color::LIGHTMAGENTA, Color::BLACK));
 }
 
 bool checkCollision(Point position, int relativeX, int relativeY) {
@@ -278,9 +373,11 @@ Point getPoint(int x, int y) {
 }
 
 void checkLose() {
-	if (player.position.x == bot.position.x && player.position.y == bot.position.y) {
-		lives--;
-		drawLives();
+	for (int i = 0; i < 2; ++i) {
+		if (player.position.x == bots[i].position.x && player.position.y == bots[i].position.y) {
+			lives--;
+			drawLives();
+		}
 	}
 
 	if (lives == 0) {
