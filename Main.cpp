@@ -29,7 +29,6 @@ struct Entity {
 
 void handlerKey(int key);
 void drawMap();
-void drawLives();
 void drawScore();
 void handlerLogic();
 void playerTick();
@@ -39,8 +38,10 @@ void pinkBot();
 bool checkCollision(Point position, int relativeX, int relativeY);
 void playerMove(int relativeX, int relativeY);
 int getLengthVector(Point first, Point second);
-void checkLose();
 Point getPoint(int x, int y);
+void checkLose();
+void drawLives();
+Point getRelativePoint(int direction, int speed);
 
 unsigned int lives = 3;
 unsigned int score = 0;
@@ -142,30 +143,11 @@ void handlerLogic() {
 }
 
 void playerTick() {
-	int relativeX = 0;
-	int relativeY = 0;
+	
+	Point relativePoint = getRelativePoint(player.direction, 1);
 
-	switch (player.direction) {
-		case DIRECTION_UP: {
-			relativeY = -1;
-			break;
-		}
-		case DIRECTION_LEFT: {
-			relativeX = -1;
-			break;
-		}
-		case DIRECTION_DOWN: {
-			relativeY = 1;
-			break;
-		}
-		case DIRECTION_RIGHT : {
-			relativeX = 1;
-			break;
-		}
-	}
-
-	if (!checkCollision(player.position, relativeX, relativeY)) {
-		playerMove(relativeX, relativeY);
+	if (!checkCollision(player.position, relativePoint.x, relativePoint.y)) {
+		playerMove(relativePoint.x, relativePoint.y);
 		checkLose();
 	}
 }
@@ -230,32 +212,12 @@ void redBot() {
 
 	int direction = getPathBot(player, bots[BOT_RED]);
 
-	int relativeX = 0;
-	int relativeY = 0;
-
-	switch (direction) {
-		case DIRECTION_UP: {
-			relativeY = -1;
-			break;
-		}
-		case DIRECTION_LEFT: {
-			relativeX = -1;
-			break;
-		}
-		case DIRECTION_DOWN: {
-			relativeY = 1;
-			break;
-		}
-		case DIRECTION_RIGHT : {
-			relativeX = 1;
-			break;
-		}
-	}
+	Point relativePoint = getRelativePoint(direction, 1);
 
 	bots[BOT_RED].direction = direction;
 
-	bots[BOT_RED].position.x += relativeX;
-	bots[BOT_RED].position.y += relativeY;
+	bots[BOT_RED].position.x += relativePoint.x;
+	bots[BOT_RED].position.y += relativePoint.y;
 
 	checkLose();
 
@@ -267,53 +229,19 @@ void pinkBot() {
 
 	Entity copyPlayer = player;
 
-	switch (player.direction) {
-		case DIRECTION_UP: {
-			copyPlayer.position.y -= 4;
-			break;
-		}
-		case DIRECTION_DOWN: {
-			copyPlayer.position.x += 4;
-			break;
-		}
-		case DIRECTION_LEFT: {
-			copyPlayer.position.y -= 4;
-			break;
-		}
-		case DIRECTION_RIGHT: {
-			copyPlayer.position.x += -4;
-			break;
-		}
-	}
+	Point relativePointPlayer = getRelativePoint(copyPlayer.direction, 4);
+
+	copyPlayer.position.x += relativePointPlayer.x;
+	copyPlayer.position.y += relativePointPlayer.y;
 
 	int direction = getPathBot(copyPlayer, bots[BOT_PINK]);
 
-	int relativeX = 0;
-	int relativeY = 0;
-
-	switch (direction) {
-		case DIRECTION_UP: {
-			relativeY = -1;
-			break;
-		}
-		case DIRECTION_LEFT: {
-			relativeX = -1;
-			break;
-		}
-		case DIRECTION_DOWN: {
-			relativeY = 1;
-			break;
-		}
-		case DIRECTION_RIGHT : {
-			relativeX = 1;
-			break;
-		}
-	}
+	Point relativePointBot = getRelativePoint(direction, 1);
 
 	bots[BOT_PINK].direction = direction;
 
-	bots[BOT_PINK].position.x += relativeX;
-	bots[BOT_PINK].position.y += relativeY;
+	bots[BOT_PINK].position.x += relativePointBot.x;
+	bots[BOT_PINK].position.y += relativePointBot.y;
 
 	checkLose();
 
@@ -390,4 +318,29 @@ void drawLives() {
 	scoreStream << L"Lives: " << lives;
 
 	handler.writeText(0, map.size() + relativeMap.y, scoreStream.str(), map[0].size(), Style::create(Color::WHITE, Color::BLACK));
+}
+
+Point getRelativePoint(int direction, int speed) {
+	Point relativePoint;
+
+	switch (direction) {
+		case DIRECTION_UP : {
+			relativePoint.y = -speed;
+			break;
+		}
+		case DIRECTION_LEFT : {
+			relativePoint.x = -speed;
+			break;
+		}
+		case DIRECTION_DOWN : {
+			relativePoint.y = speed;
+			break;
+		}
+		case DIRECTION_RIGHT : {
+			relativePoint.x = speed;
+			break;
+		}
+	}
+	
+	return relativePoint;
 }
