@@ -60,6 +60,24 @@ void DoubleBuffering::draw() {
 		}
 	}
 }
+/* DELETE */////////////////////////////////////////////////////////////////////////
+void DoubleBuffering::drawTree() {
+	for (unsigned int y = 0; y < newScreenBuffer.size(); ++y) {
+		for (unsigned int x = 0; x < newScreenBuffer[y].size(); ++x) {
+			if (onScreenBuffer[y][x].theme.foreground != newScreenBuffer[y][x].theme.foreground ||
+				onScreenBuffer[y][x].theme.background != newScreenBuffer[y][x].theme.background ||
+				onScreenBuffer[y][x].symbol != newScreenBuffer[y][x].symbol) {
+
+				setCursorPosition(x, y);
+				Style::select(newScreenBuffer[y][x].theme);
+				std::wcout << newScreenBuffer[y][x].symbol;
+
+				onScreenBuffer[y][x] = newScreenBuffer[y][x];
+			}
+		}
+	}
+}
+/* DELETE */////////////////////////////////////////////////////////////////////////
 
 void DoubleBuffering::hideCursor(bool status) {
 	CONSOLE_CURSOR_INFO consoleInfo;

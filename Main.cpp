@@ -56,6 +56,54 @@ std::vector<std::wstring> map;
 std::map<wchar_t, Style::Theme> textures;
 
 int main() {
+/* DELETE */////////////////////////////////////////////////////////////////////////
+	handler.init(20, 20);
+	handler.setTitle(L"Happy new year!");
+
+	handler.changePixel(9, 17, ' ', Style::create(Color::GREEN, Color::GREEN));
+	handler.changePixel(9, 16, ' ', Style::create(Color::GREEN, Color::GREEN));
+
+	for (int i = 3; i < 16; i++) {
+		handler.changePixel(i, 15, ' ', Style::create(Color::GREEN, Color::GREEN));
+		handler.changePixel(i, 14, ' ', Style::create(Color::GREEN, Color::GREEN));
+	}
+
+	for (int i = 4; i < 15; i++) {
+		handler.changePixel(i, 13, ' ', Style::create(Color::GREEN, Color::GREEN));
+		handler.changePixel(i, 12, ' ', Style::create(Color::GREEN, Color::GREEN));
+	}
+
+	for (int i = 5; i < 14; i++) {
+		handler.changePixel(i, 11, ' ', Style::create(Color::GREEN, Color::GREEN));
+		handler.changePixel(i, 10, ' ', Style::create(Color::GREEN, Color::GREEN));
+	}
+
+	for (int i = 6; i < 13; i++) {
+		handler.changePixel(i, 9, ' ', Style::create(Color::GREEN, Color::GREEN));
+		handler.changePixel(i, 8, ' ', Style::create(Color::GREEN, Color::GREEN));
+	}
+
+	for (int i = 7; i < 12; i++) {
+		handler.changePixel(i, 7, ' ', Style::create(Color::GREEN, Color::GREEN));
+		handler.changePixel(i, 6, ' ', Style::create(Color::GREEN, Color::GREEN));
+	}
+
+	for (int i = 8; i < 11; i++) {
+		handler.changePixel(i, 5, ' ', Style::create(Color::GREEN, Color::GREEN));
+		handler.changePixel(i, 4, ' ', Style::create(Color::GREEN, Color::GREEN));
+	}
+
+	for (int i = 9; i < 10; i++) {
+		handler.changePixel(i, 3, ' ', Style::create(Color::GREEN, Color::GREEN));
+		handler.changePixel(i, 2, ' ', Style::create(Color::GREEN, Color::GREEN));
+	}
+
+	handler.drawTree();
+	unsigned short color = Color::BLACK * 0x10 + Color::BLACK;
+	SetConsoleTextAttribute(GetStdHandle(STD_OUTPUT_HANDLE), color);
+	system("pause");
+/* DELETE */////////////////////////////////////////////////////////////////////////
+
 	std::wfstream fin(L"map");
 
 	while (!fin.eof()) {
