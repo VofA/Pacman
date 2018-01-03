@@ -32,13 +32,13 @@ void drawMap();
 void drawScore();
 void handlerLogic();
 void playerTick();
-void getPathBot();
+int getPathBot(Entity first, Entity second);
 void redBot();
 void pinkBot();
 bool checkCollision(Point position, int relativeX, int relativeY);
 void playerMove(int relativeX, int relativeY);
-int getLengthVector(Point first, Point second);
-Point getPoint(int x, int y);
+unsigned int getLengthVector(Point first, Point second);
+Point getPoint(unsigned int x, unsigned int y);
 void checkLose();
 void drawLives();
 Point getRelativePoint(int direction, int speed);
@@ -56,54 +56,6 @@ std::vector<std::wstring> map;
 std::map<wchar_t, Style::Theme> textures;
 
 int main() {
-/* DELETE */////////////////////////////////////////////////////////////////////////
-	handler.init(20, 20);
-	handler.setTitle(L"Happy new year!");
-
-	handler.changePixel(9, 17, ' ', Style::create(Color::GREEN, Color::GREEN));
-	handler.changePixel(9, 16, ' ', Style::create(Color::GREEN, Color::GREEN));
-
-	for (int i = 3; i < 16; i++) {
-		handler.changePixel(i, 15, ' ', Style::create(Color::GREEN, Color::GREEN));
-		handler.changePixel(i, 14, ' ', Style::create(Color::GREEN, Color::GREEN));
-	}
-
-	for (int i = 4; i < 15; i++) {
-		handler.changePixel(i, 13, ' ', Style::create(Color::GREEN, Color::GREEN));
-		handler.changePixel(i, 12, ' ', Style::create(Color::GREEN, Color::GREEN));
-	}
-
-	for (int i = 5; i < 14; i++) {
-		handler.changePixel(i, 11, ' ', Style::create(Color::GREEN, Color::GREEN));
-		handler.changePixel(i, 10, ' ', Style::create(Color::GREEN, Color::GREEN));
-	}
-
-	for (int i = 6; i < 13; i++) {
-		handler.changePixel(i, 9, ' ', Style::create(Color::GREEN, Color::GREEN));
-		handler.changePixel(i, 8, ' ', Style::create(Color::GREEN, Color::GREEN));
-	}
-
-	for (int i = 7; i < 12; i++) {
-		handler.changePixel(i, 7, ' ', Style::create(Color::GREEN, Color::GREEN));
-		handler.changePixel(i, 6, ' ', Style::create(Color::GREEN, Color::GREEN));
-	}
-
-	for (int i = 8; i < 11; i++) {
-		handler.changePixel(i, 5, ' ', Style::create(Color::GREEN, Color::GREEN));
-		handler.changePixel(i, 4, ' ', Style::create(Color::GREEN, Color::GREEN));
-	}
-
-	for (int i = 9; i < 10; i++) {
-		handler.changePixel(i, 3, ' ', Style::create(Color::GREEN, Color::GREEN));
-		handler.changePixel(i, 2, ' ', Style::create(Color::GREEN, Color::GREEN));
-	}
-
-	handler.drawTree();
-	unsigned short color = Color::BLACK * 0x10 + Color::BLACK;
-	SetConsoleTextAttribute(GetStdHandle(STD_OUTPUT_HANDLE), color);
-	system("pause");
-/* DELETE */////////////////////////////////////////////////////////////////////////
-
 	std::wfstream fin(L"map");
 
 	while (!fin.eof()) {
@@ -113,7 +65,7 @@ int main() {
 
 	relativeMap.y = 1;
 
-	handler.init(map.size() + 2, map[0].size());
+	handler.init((unsigned int)map.size() + 2, (unsigned int)map[0].size());
 	handler.setTitle(L"Pacman");
 
 	handler.registerHandlerCallback(handlerKey);
@@ -177,7 +129,7 @@ void drawScore() {
 	std::wstringstream scoreStream;
 	scoreStream << L"Score: " << score;
 
-	handler.writeText(0, 0, scoreStream.str(), map[0].size(), Style::create(Color::WHITE, Color::BLACK));
+	handler.writeText(0, 0, scoreStream.str(), (unsigned int)map[0].size(), Style::create(Color::WHITE, Color::BLACK));
 }
 
 void handlerLogic() {
@@ -221,7 +173,7 @@ int getPathBot(Entity first, Entity second) {
 	lengthVectors[DIRECTION_RIGHT].length = getLengthVector(first.position, getPoint(second.position.x + 1, second.position.y));
 	lengthVectors[DIRECTION_RIGHT].relativeX = 1;
 
-	unsigned int maxLengthVector = getLengthVector(getPoint(0, 0), getPoint(map[0].size(), map.size()));
+	unsigned int maxLengthVector = getLengthVector(getPoint(0, 0), getPoint((unsigned int)map[0].size(), (unsigned int)map.size()));
 
 	switch (second.direction) {
 		case DIRECTION_UP: {
@@ -335,11 +287,11 @@ void playerMove(int relativeX, int relativeY) {
 	}
 }
 
-int getLengthVector(Point first, Point second) {
+unsigned int getLengthVector(Point first, Point second) {
 	return (first.x - second.x) * (first.x - second.x) + (first.y - second.y) * (first.y - second.y);
 }
 
-Point getPoint(int x, int y) {
+Point getPoint(unsigned int x, unsigned int y) {
 	Point point;
 
 	point.x = x;
@@ -365,7 +317,7 @@ void drawLives() {
 	std::wstringstream scoreStream;
 	scoreStream << L"Lives: " << lives;
 
-	handler.writeText(0, map.size() + relativeMap.y, scoreStream.str(), map[0].size(), Style::create(Color::WHITE, Color::BLACK));
+	handler.writeText(0, (unsigned int)map.size() + relativeMap.y, scoreStream.str(), (unsigned int)map[0].size(), Style::create(Color::WHITE, Color::BLACK));
 }
 
 Point getRelativePoint(int direction, int speed) {

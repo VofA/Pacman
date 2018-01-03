@@ -12,7 +12,7 @@ public:
 	void init(unsigned int height, unsigned int width);
 	void clear(Style::Theme theme = Style::create());
 	void changePixel(unsigned int x, unsigned int y, wchar_t symbol = ' ', Style::Theme theme = Style::create());
-	/* DELETE */ void drawTree();////////////////////////////////////////////////////////////////////////
+
 protected:
 	void draw();
 	void hideCursor(bool status = true);
